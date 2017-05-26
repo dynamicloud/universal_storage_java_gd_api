@@ -100,12 +100,19 @@ In order to use Google Drive as a storage, you need a Google account and retriev
    2. Access type: offline
    3. Use your own OAuth credentials: TICK
    4. Client Id and Client Secret: the keys that you've stored within a file.
+10. Press on **close**
 
 <img src="https://s3.amazonaws.com/shared-files-2017/google_drive_settings_oauth.png"> 
 
-10. Press on **close**
-11. On **Select & authorize APIs** scroll down and open the dropdown **Drive API v3** then select **https://www.googleapis.com/auth/drive.file**
-12. Press **Authorize APIs**
+11. On **Select & authorize APIs** scroll down and open the dropdown **Drive API v3** then select **https://www.googleapis.com/auth/drive** and **https://www.googleapis.com/auth/drive.file**
+12. Press **Authorize APIs**.  You will be prompted to choose your Google account and confirm access.
+13. Press **Allow**
+
+<img src="https://s3.amazonaws.com/shared-files-2017/google_drive_settings_authorize.png"> 
+
+14. Press on **Exchange Authorization code for tokens**.  Now, copy the refresh token and paste it with the file where you've stored the `client_id` and `client_secret` keys.
+15. At this point you have the three keys.
+
 ```json
 {
 	"provider": "google.drive",
