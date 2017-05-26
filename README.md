@@ -130,6 +130,7 @@ In order to use Google Drive as a storage, you need a Google account and retriev
 ### This api will get the client_id, client_secret and refresh_token through either this file or environment variables `client_id`, `client_secret` and `refresh_token`
 
 The root folder is the storage where the files will be stored.
+
 The local tmp folder is where temporary files will be stored.
   
 # How to use
