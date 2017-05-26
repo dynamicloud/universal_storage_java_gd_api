@@ -84,8 +84,22 @@ In order to use Google Drive as a storage, you need a Google account and retriev
 1. Create a google project [here](https://console.developers.google.com/).
 2. After project creation, create the credentials for this project.  This step will generate two keys (`client_id` and `client_secret`).  Click on **Create credentials** and then **OAuth client ID**
 <img src="https://s3.amazonaws.com/shared-files-2017/google_drive_credentials.png">
-3. Copy the name of your root bucket and paste it into the settings.json file
-
+3. Select as Application Type: **Web application**
+4. Enter a name for these new credentials
+5. Fill the field Authorized redirect URIs with: https://developers.google.com/oauthplayground
+6. Press **create**
+<img src="https://s3.amazonaws.com/shared-files-2017/google_drive_credentials_form.png">
+7. At this point you have generated the `client_id` and `client_secret` keys.  Copy these keys and paste them into a text file, you are going to use them later.
+8. The last step is for retrieving the `refresh_token`.  Click [here](https://developers.google.com/oauthplayground) to start the process.
+9. In Settings (gear icon), set
+   Oauth flow: server
+   Access type: offline
+   Use your own OAuth credentials: TICK
+   Client Id and Client Secret: the keys that you've stored within a file.
+<img src="https://s3.amazonaws.com/shared-files-2017/google_drive_settings_oauth.png"> 
+10. Press on **close**
+11. On **Select & authorize APIs** scroll down and open the dropdown **Drive API v3** then select **https://www.googleapis.com/auth/drive.file**
+12. Press **Authorize APIs**
 ```json
 {
 	"provider": "google.drive",
