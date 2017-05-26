@@ -13,7 +13,7 @@ Universal storage provides you an interface for storing files according to your 
 1. [Maven project](maven-project)
 2. [Test API](#test-api)
 3. [Settings](#settings)
-4. [Explanation for setting keys](#explation-for-setting-keys)
+4. [Explanation for setting keys](#explanation-for-setting-keys)
 5. [Retrieve Google drive keys](#retrieve-google-drive-keys)
 6. [How to use](#how-to-use)
 
