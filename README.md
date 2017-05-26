@@ -14,7 +14,7 @@ Universal storage provides you an interface for storing files according to your 
 2. [Test API](#test-api)
 3. [Settings](#settings)
 4. [Explanation for setting keys](#explanation-for-setting-keys)
-5. [Retrieve Google drive keys](#retrieve-google-drive-keys)
+5. [Retrieve Google Drive keys](#retrieve-google-drive-keys)
 6. [How to use](#how-to-use)
 
 # Maven project
@@ -78,12 +78,12 @@ If you want to test the API, follow these steps:
 
 `refresh_token` This token is used to regenerate the access token.
 
-# Retrieve Google drive keys
-In order to use AWS s3 as a storage, you need a aws account and create a bucket where the files will be stored.
+# Retrieve Google Drive keys
+In order to use Google Drive as a storage, you need a Google account and retrieve three specific keys (client_id, client_secret and refresh_token).  The following steps won't show how to create a google account.
 
-1. Create sign up [here](https://aws.amazon.com/free) for a new account.
-2. After account creation, go to s3 service and create a new bucket.  This bucket will be your root "folder".
-<img src="https://s3.amazonaws.com/shared-files-2017/s3_root_bucket.png">
+1. Create a google project [here](https://console.developers.google.com/).
+2. After project creation, create the credentials for this project.  This step will generate two keys (`client_id` and `client_secret`).  Click on **Create credentials** and then **OAuth client ID**
+<img src="https://s3.amazonaws.com/shared-files-2017/google_drive_credentials.png">
 3. Copy the name of your root bucket and paste it into the settings.json file
 
 ```json
