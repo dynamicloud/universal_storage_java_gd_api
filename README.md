@@ -60,9 +60,10 @@ If you want to test the API, follow these steps:
 	}
 }
 ```
-2. The root and tmp keys are the main data to be filled, create two folders representing each one root and tmp.
-3. Save the file settings.json
-4. Add the maven dependency in your pom.xml file.
+2. The root and tmp keys are the main data to be filled.  Create a local folder called **tmp** and paste its path on the key **tmp**.
+3. Create a folder called universalstorage in your root on Google Drive.
+4. Save the file settings.json
+5. Add the maven dependency in your pom.xml file.
 ```xml
 <dependency>
    <groupId>org.dynamicloud.api</groupId>
@@ -81,7 +82,7 @@ If you want to test the API, follow these steps:
 # Retrieve Google Drive keys
 In order to use Google Drive as a storage, you need a Google account and retrieve three specific keys (client_id, client_secret and refresh_token).  The following steps won't show how to create a google account.
 
-1. Create a google project [here](https://console.developers.google.com/).
+1. Create a google project [here](https://console.developers.google.com/) fill with the name **Universal Storage**.
 2. After project creation, create the credentials for this project.  This step will generate two keys (`client_id` and `client_secret`).  Click on **Create credentials** and then **OAuth client ID**
 
 <img src="https://s3.amazonaws.com/shared-files-2017/google_drive_credentials.png">
@@ -110,16 +111,9 @@ In order to use Google Drive as a storage, you need a Google account and retriev
 
 <img src="https://s3.amazonaws.com/shared-files-2017/google_drive_settings_authorize.png"> 
 
-14. Press on **Exchange Authorization code for tokens**.  Now, copy the refresh token and paste it with the file where you've stored the `client_id` and `client_secret` keys.
+14. Press on **Exchange Authorization code for tokens**.  Now, copy the refresh token and paste it within the file where you've stored the `client_id` and `client_secret` keys.
 15. At this point you have the three keys.
-
-```json
-{
-	"provider": "google.drive",
-	"root": "universalstorage"
-}
-```
-4. Universal storage needs access to your bucket.  We recommend to create a IAM user, apply the necessary permissions and generate access keys, paste these access keys into the settings.json file.
+16. Universal storage needs access to your Google Drive account.  Paste these keys into the settings.json file.
 ```json
 {
 	"provider": "google.drive",
@@ -136,7 +130,7 @@ In order to use Google Drive as a storage, you need a Google account and retriev
 ### This api will get the client_id, client_secret and refresh_token through either this file or environment variables `client_id`, `client_secret` and `refresh_token`
 
 The root folder is the storage where the files will be stored.
-The tmp folder is where temporary files will be stored.
+The local tmp folder is where temporary files will be stored.
   
 # How to use
 **Examples for Storing files:**
