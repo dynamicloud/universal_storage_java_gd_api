@@ -103,7 +103,9 @@ public class UniversalGoogleDriveStorage extends UniversalStorage {
      */
     void storeFile(File file, String path) throws UniversalIOException {
         if (file.isDirectory()) {
-            throw new UniversalIOException(file.getName() + " is a folder.  You should call the createFolder method.");
+            UniversalIOException error = new UniversalIOException(file.getName() + " is a folder.  You should call the createFolder method.");
+            this.triggerOnErrorListeners(error);
+            throw error;
         }
 
         if (path == null) {
@@ -115,13 +117,21 @@ public class UniversalGoogleDriveStorage extends UniversalStorage {
                         "' and trashed = false").execute().getFiles();
 
             if (files.isEmpty()) {
-                throw new UniversalIOException(this.settings.getRoot() + " doesn't exist as a root storage.");
+                UniversalIOException error = new UniversalIOException(this.settings.getRoot() + " doesn't exist as a root storage.");
+                this.triggerOnErrorListeners(error);
+                throw error;
             }
 
             String rootId = files.get(0).getId();
             if (!path.trim().equals("")) {
                 String [] subFolders = path.trim().split("/");
-                rootId = discoverPath(subFolders, 0, rootId);
+                
+                com.google.api.services.drive.model.File currentRootFile = new com.google.api.services.drive.model.File();
+                currentRootFile.setId(rootId);
+
+                com.google.api.services.drive.model.File rootFile = discoverPath(subFolders, 0, currentRootFile);
+                
+                rootId = rootFile == null ? null : rootFile.getId();
             }
 
             deleteFiles(rootId, file.getName());
@@ -135,14 +145,24 @@ public class UniversalGoogleDriveStorage extends UniversalStorage {
             Drive.Files.Create insert = service.files().create(fileMetadata, mediaContent);
             MediaHttpUploader uploader = insert.getMediaHttpUploader();
             uploader.setDirectUploadEnabled(true);
+
+            this.triggerOnStoreFileListeners();
             
-            insert.execute();
+            com.google.api.services.drive.model.File newFile = insert.execute();
+            
+            this.triggerOnFileStoredListeners(new UniversalStorageData(file.getName(), 
+                            newFile.getWebViewLink(),
+                            newFile.getId(), 
+                            this.settings.getRoot() + ("".equals(path) ? "" : ("/" + path))));
         } catch (Exception e) {
-            throw new UniversalIOException(e.getMessage());
+            UniversalIOException error = new UniversalIOException(e.getMessage());
+            this.triggerOnErrorListeners(error);
+            throw error;
         }
     }
 
-    private String discoverPath(String [] subFolders, int index, String currentParentId) 
+    private com.google.api.services.drive.model.File discoverPath(String [] subFolders, int index, 
+            com.google.api.services.drive.model.File currentParentId) 
                     throws IOException {
         return discoverPath(subFolders, index, currentParentId, true);
     }
@@ -156,12 +176,13 @@ public class UniversalGoogleDriveStorage extends UniversalStorage {
      * @param createFolder while this process is descovering the subfolders the creation of a folder will be executed
      *        if one of then doesn't exist.
      */
-    private String discoverPath(String [] subFolders, int index, String currentParentId, boolean createFolder) 
+    private com.google.api.services.drive.model.File discoverPath(String [] subFolders, int index, 
+                com.google.api.services.drive.model.File currentParentId, boolean createFolder) 
                     throws IOException {
         String sf = subFolders[index];
         
         List<com.google.api.services.drive.model.File> currentFolders = service.files().
-                list().setQ("'" + currentParentId + "' in parents and name = '" + sf + 
+                list().setQ("'" + currentParentId.getId() + "' in parents and name = '" + sf + 
                             "' and mimeType = 'application/vnd.google-apps.folder' and trashed = false").execute().getFiles();
         if (currentFolders.size() == 0) {
             if (createFolder) {
@@ -171,9 +192,9 @@ public class UniversalGoogleDriveStorage extends UniversalStorage {
                 com.google.api.services.drive.model.File newFolder = new com.google.api.services.drive.model.File();
                 newFolder.setName(sf);
                 newFolder.setMimeType("application/vnd.google-apps.folder");
-                newFolder.setParents(Arrays.asList(currentParentId));
+                newFolder.setParents(Arrays.asList(currentParentId.getId()));
                 com.google.api.services.drive.model.File nf = service.files().create(newFolder).execute();
-                currentParentId = nf.getId();
+                currentParentId = nf;
             } else {
                 return null;
             }
@@ -182,7 +203,7 @@ public class UniversalGoogleDriveStorage extends UniversalStorage {
              * The current parent folder should have unique names.  So, we are going to get the 
              * first elementin within the list. 
              */
-            currentParentId = currentFolders.get(0).getId();
+            currentParentId = currentFolders.get(0);
         }
 
         if (index + 1 == subFolders.length) {
@@ -268,22 +289,35 @@ public class UniversalGoogleDriveStorage extends UniversalStorage {
         }
 
         try {
+            this.triggerOnRemoveFileListeners();
             List<com.google.api.services.drive.model.File> files = service.files().list().setQ("name = '" + this.settings.getRoot() + 
                         "' and trashed = false").execute().getFiles();
 
             if (files.isEmpty()) {
-                throw new UniversalIOException(this.settings.getRoot() + " doesn't exist as a root storage.");
+                UniversalIOException error = new UniversalIOException(this.settings.getRoot() + " doesn't exist as a root storage.");
+                this.triggerOnErrorListeners(error);
+                throw error;
             }
 
             String rootId = files.get(0).getId();
             if (!path.trim().equals("")) {
                 String [] subFolders = path.trim().split("/");
-                rootId = discoverPath(subFolders, 0, rootId);
+
+                com.google.api.services.drive.model.File currentRootFile = new com.google.api.services.drive.model.File();
+                currentRootFile.setId(rootId);
+
+                com.google.api.services.drive.model.File rootFile = discoverPath(subFolders, 0, currentRootFile);
+
+                rootId = rootFile == null ? null : rootFile.getId();
             }
 
             deleteFiles(rootId, fileName);
+
+            this.triggerOnFileRemovedListeners();
         } catch (Exception e) {
-            throw new UniversalIOException(e.getMessage());
+            UniversalIOException error = new UniversalIOException(e.getMessage());
+            this.triggerOnErrorListeners(error);
+            throw error;
         }      
     }
 
@@ -309,24 +343,42 @@ public class UniversalGoogleDriveStorage extends UniversalStorage {
         PathValidator.validatePath(path);
 
         if ("".equals(path.trim())) {
-            throw new UniversalIOException("Invalid path.  The path shouldn't be empty.");
+            UniversalIOException error = new UniversalIOException("Invalid path.  The path shouldn't be empty.");
+            this.triggerOnErrorListeners(error);
+            throw error;
         }
 
         try {
+            this.triggerOnCreateFolderListeners();
             List<com.google.api.services.drive.model.File> files = service.files().list().setQ("name = '" + this.settings.getRoot() + 
                         "' and trashed = false").execute().getFiles();
 
             if (files.isEmpty()) {
-                throw new UniversalIOException(this.settings.getRoot() + " doesn't exist as a root storage.");
+                UniversalIOException error = new UniversalIOException(this.settings.getRoot() + " doesn't exist as a root storage.");
+                this.triggerOnErrorListeners(error);
+                throw error;
             }
 
             String rootId = files.get(0).getId();
             if (!path.trim().equals("")) {
                 String [] subFolders = path.trim().split("/");
-                discoverPath(subFolders, 0, rootId);
+
+                com.google.api.services.drive.model.File currentRootFile = new com.google.api.services.drive.model.File();
+                currentRootFile.setId(rootId);
+
+                this.triggerOnCreateFolderListeners();
+
+                com.google.api.services.drive.model.File newFolder = discoverPath(subFolders, 0, currentRootFile);
+
+                this.triggerOnFolderCreatedListeners(new UniversalStorageData(newFolder.getName(), 
+                            newFolder.getWebViewLink(),
+                            newFolder.getId(), 
+                            this.settings.getRoot() + ("".equals(path) ? "" : ("/" + path))));
             }
         } catch (Exception e) {
-            throw new UniversalIOException(e.getMessage());
+            UniversalIOException error = new UniversalIOException(e.getMessage());
+            this.triggerOnErrorListeners(error);
+            throw error;
         }   
     }
 
@@ -352,26 +404,40 @@ public class UniversalGoogleDriveStorage extends UniversalStorage {
         }
 
         try {
+            this.triggerOnRemoveFolderListeners();
             List<com.google.api.services.drive.model.File> files = service.files().list().setQ("name = '" + this.settings.getRoot() + 
                         "' and trashed = false").execute().getFiles();
 
             if (files.isEmpty()) {
-                throw new UniversalIOException(this.settings.getRoot() + " doesn't exist as a root storage.");
+                UniversalIOException error = new UniversalIOException(this.settings.getRoot() + " doesn't exist as a root storage.");
+                this.triggerOnErrorListeners(error);
+                throw error;
             }
 
             String rootId = files.get(0).getId();
             if (!path.trim().equals("")) {
                 String [] subFolders = path.trim().split("/");
-                rootId = discoverPath(subFolders, 0, rootId, false);
+
+                com.google.api.services.drive.model.File currentRootFile = new com.google.api.services.drive.model.File();
+                currentRootFile.setId(rootId);
+
+                com.google.api.services.drive.model.File rootFile = discoverPath(subFolders, 0, currentRootFile, false);
+
+                rootId = rootFile == null ? null : rootFile.getId();
 
                 if (rootId == null) {
-                    throw new UniversalIOException(path + " doesn't exist within storage.");
+                    UniversalIOException error = new UniversalIOException(path + " doesn't exist within storage.");
+                    this.triggerOnErrorListeners(error);
+                    throw error;
                 } else {
                     service.files().delete(rootId).execute();
                 }
             }
+            this.triggerOnFolderRemovedListeners();
         } catch (Exception e) {
-            throw new UniversalIOException(e.getMessage());
+            UniversalIOException error = new UniversalIOException(e.getMessage());
+            this.triggerOnErrorListeners(error);
+            throw error;
         }
     }
 
@@ -391,7 +457,9 @@ public class UniversalGoogleDriveStorage extends UniversalStorage {
         }
 
         if (path.trim().endsWith("/")) {
-            throw new UniversalIOException("Invalid path.  Looks like you're trying to retrieve a folder.");
+            UniversalIOException error = new UniversalIOException("Invalid path.  Looks like you're trying to retrieve a folder.");
+            this.triggerOnErrorListeners(error);
+            throw error;
         }
 
         int index = path.lastIndexOf("/");
@@ -406,7 +474,9 @@ public class UniversalGoogleDriveStorage extends UniversalStorage {
         try {
             FileUtils.copyInputStreamToFile(stream, retrievedFile);
         } catch (Exception e) {
-            throw new UniversalIOException(e.getMessage());
+            UniversalIOException error = new UniversalIOException(e.getMessage());
+            this.triggerOnErrorListeners(error);
+            throw error;
         } finally {
             try {
                 stream.close();
@@ -432,7 +502,9 @@ public class UniversalGoogleDriveStorage extends UniversalStorage {
         }
 
         if (path.trim().endsWith("/")) {
-            throw new UniversalIOException("Invalid path.  Looks like you're trying to retrieve a folder.");
+            UniversalIOException error = new UniversalIOException("Invalid path.  Looks like you're trying to retrieve a folder.");
+            this.triggerOnErrorListeners(error);
+            throw error;
         }
 
         int index = path.lastIndexOf("/");
@@ -449,23 +521,35 @@ public class UniversalGoogleDriveStorage extends UniversalStorage {
                         "' and trashed = false").execute().getFiles();
 
             if (files.isEmpty()) {
-                throw new UniversalIOException(this.settings.getRoot() + " doesn't exist as a root storage.");
+                UniversalIOException error = new UniversalIOException(this.settings.getRoot() + " doesn't exist as a root storage.");
+                this.triggerOnErrorListeners(error);
+                throw error;
             }
 
             String rootId = files.get(0).getId();
             if (!path.trim().equals("")) {
                 String [] subFolders = path.trim().split("/");
-                rootId = discoverPath(subFolders, 0, rootId, false);
+
+                com.google.api.services.drive.model.File currentRootFile = new com.google.api.services.drive.model.File();
+                currentRootFile.setId(rootId);
+
+                com.google.api.services.drive.model.File rootFile = discoverPath(subFolders, 0, currentRootFile, false);
+
+                rootId = rootFile == null ? null : rootFile.getId();
             }
 
             if (rootId == null) {
-                throw new UniversalIOException(path + " doesn't exist within storage.");
+                UniversalIOException error = new UniversalIOException(path + " doesn't exist within storage.");
+                this.triggerOnErrorListeners(error);
+                throw error;
             } else {
                 files = service.files().list().setQ("'" + rootId + "' in parents and name = '" + fileName + 
                             "' and mimeType != 'application/vnd.google-apps.folder' and trashed = false").
                                 execute().getFiles();
                 if (files.size() == 0) {
-                    throw new UniversalIOException(path + " doesn't exist within storage.");
+                    UniversalIOException error = new UniversalIOException(path + " doesn't exist within storage.");
+                    this.triggerOnErrorListeners(error);
+                    throw error;
                 } else {
                     FileOutputStream outputStream = null;
                     try {
@@ -482,7 +566,9 @@ public class UniversalGoogleDriveStorage extends UniversalStorage {
                 }
             }
         } catch (Exception e) {
-            throw new UniversalIOException(e.getMessage());
+            UniversalIOException error = new UniversalIOException(e.getMessage());
+            this.triggerOnErrorListeners(error);
+            throw error;
         }     
     }
 
@@ -494,7 +580,37 @@ public class UniversalGoogleDriveStorage extends UniversalStorage {
         try {
             FileUtils.cleanDirectory(new File(this.settings.getTmp()));
         } catch (Exception e) {
-            throw new UniversalIOException(e.getMessage());
+            UniversalIOException error = new UniversalIOException(e.getMessage());
+            this.triggerOnErrorListeners(error);
+            throw error;
+        }
+    }
+
+    /**
+     * This method wipes the root folder of a storage, basically, will remove all files and folder in it.  
+     * Be careful with this method because in too many cases this action won't provide a rollback action.
+     */
+    public void wipe() throws UniversalIOException {
+        try {
+            List<com.google.api.services.drive.model.File> files = service.files().list().setQ("name = '" + this.settings.getRoot() + 
+                        "' and mimeType = 'application/vnd.google-apps.folder' and trashed = false").
+                            execute().getFiles();
+
+            if (files.size() > 0) {
+                String rootId = files.get(0).getId();
+                files = service.files().list().setQ("'" + rootId + "' in parents and trashed = false").execute().getFiles();
+                for (com.google.api.services.drive.model.File f : files) {
+                    service.files().delete(f.getId()).execute();
+                }
+            } else {
+                UniversalIOException error = new UniversalIOException(this.settings.getRoot() + " doesn't exist as a root storage.");
+                this.triggerOnErrorListeners(error);
+                throw error;
+            }
+        } catch (Exception e) {
+            UniversalIOException error = new UniversalIOException(e.getMessage());
+            this.triggerOnErrorListeners(error);
+            throw error;
         }
     }
 }
