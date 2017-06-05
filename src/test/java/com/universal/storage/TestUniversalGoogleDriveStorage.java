@@ -17,6 +17,7 @@ public class TestUniversalGoogleDriveStorage extends TestCase {
     private static UniversalStorage us = null;
     protected void setUp() {
         try {
+            Thread.sleep(2000);
             if (us == null) {
                 us = UniversalStorage.Impl.
                     getInstance(new UniversalSettings(new File("src/test/resources/settings.json")));
@@ -72,7 +73,7 @@ public class TestUniversalGoogleDriveStorage extends TestCase {
     public void testRetrieveFileAsGoogleDriveProvider() {
         String fileName = System.nanoTime() + ".txt";
         try {
-            setUpTest(fileName, "retrieve/innerfolder");
+            setUpTest(fileName, "retrieve/innerfolder");            
             us.retrieveFile("retrieve/innerfolder/" + fileName);
         } catch (Exception e) {
             fail(e.getMessage());
